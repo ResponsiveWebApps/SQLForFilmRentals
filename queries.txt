@@ -1,0 +1,63 @@
+/*Query 1 - query used for the first insight */
+SELECT (film_title), COUNT(rental_id) AS rental_count
+FROM
+    (SELECT f.title AS film_title,  r.rental_id
+     FROM film_category AS fc
+          JOIN category AS c
+          ON fc.category_id = c.category_id
+          JOIN film AS f
+          ON f.film_id = fc.film_id
+          JOIN inventory AS i
+          ON f.film_id = i.film_id
+          JOIN rental AS r
+          ON i.inventory_id = r.inventory_id
+
+     WHERE c.name = 'Animation') AS fam1
+
+GROUP BY film_title
+ORDER BY rental_count DESC;
+
+/*Query 2 - query used for the second insight */
+SELECT film_title, rental_duration,
+       NTILE(4) OVER(ORDER BY rental_duration) AS standard_quartile
+FROM
+    (SELECT f.title AS film_title, c.name AS category_name, f.rental_duration AS rental_duration
+     FROM film_category AS fc
+          JOIN category AS c
+          ON fc.category_id = c.category_id
+          JOIN film AS f
+          ON f.film_id = fc.film_id
+
+     WHERE c.name = 'Music') AS t1
+
+ORDER BY rental_duration
+LIMIT 10;
+
+/*Query 3 - query used for the third insight */
+SELECT TO_CHAR(r.rental_date, 'MM-YYYY') AS Rental_Month, COUNT(*) AS Count_Rentals
+FROM staff AS sf
+     JOIN rental AS r
+     ON sf.staff_id = r.staff_id    
+     JOIN store sr
+     ON sr.store_id = sf.store_id
+
+GROUP BY Rental_Month
+ORDER BY count_rentals DESC;
+
+
+/*Query 4 - query used for the fourth insight */
+SELECT TO_CHAR(pay.payment_date, 'MM-YYYY') AS pay_mon, t1.fullname, SUM(pay.amount) AS pay_amount
+FROM(SELECT c.customer_id AS customer_id, c.first_name || ' ' || c.last_name AS fullname, SUM(p.amount) AS sum_amount
+     FROM customer AS c
+          JOIN payment AS p
+          ON p.customer_id = c.customer_id
+
+     GROUP BY C.customer_id
+     ORDER BY sum_amount DESC
+     LIMIT 10) AS t1
+
+    JOIN payment AS pay
+    ON pay.customer_id = t1.customer_id
+
+GROUP BY t1.fullname, pay_mon
+ORDER BY t1.fullname ASC;
